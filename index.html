@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Monika's To-Do List</title>
+    <style>
+        h1,h2 {
+            color: #FFFFFF;
+            font-family: system-ui;
+            margin-left: 20px;
+        }
+        body {
+            background-color: #1E1E1E;
+            text-align: center;
+            font-family: system-ui;
+        }
+        label, li {
+            color: #86C232;
+            font-size: 20px;
+        }
+        button {
+            background-color: #86C232;
+            border: none;
+            color: #FFFFFF;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #679123;
+        }
+        input {
+            color: #222629;
+            font-size: 18px;
+            padding: 8px;
+            width: 250px;
+            border-radius: 5px;
+            border: 1px solid #86C232;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #333;
+            margin: 10px auto;
+            padding: 10px;
+            border-radius: 5px;
+            width: 60%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background-color: #FF6347;
+            border: none;
+            color: #FFFFFF;
+            font-size: 14px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .delete-btn:hover {
+            background-color: #D43F3A;
+        }
+    </style>
+    <script>
+        var addTask = () => {
+            let task = document.getElementById("task").value;
+            if (!task) {
+                alert("Task cannot be empty!");
+                return;
+            }
+
+            fetch("https://t8g4xot9rd.execute-api.us-east-1.amazonaws.com/prod/", {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "task": task, "user": "Monika" })  // Ensure API expects this format
+            })
+            .then(response => response.json())
+            .then(() => {
+                fetchTasks(); // Refresh task list
+                document.getElementById("task").value = "";
+            })
+            .catch(error => console.log('Error:', error));
+        }
+
+        var fetchTasks = () => {
+            fetch("https://t8g4xot9rd.execute-api.us-east-1.amazonaws.com/prod/")
+            .then(response => response.json())
+            .then(tasks => {
+                let taskList = document.getElementById("taskList");
+                taskList.innerHTML = "";
+                tasks.forEach(taskObj => {
+                    let li = document.createElement("li");
+                    li.textContent = taskObj.task; // Ensure API returns { task, taskId }
+
+                    let deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Delete";
+                    deleteBtn.classList.add("delete-btn");
+                    deleteBtn.onclick = () => deleteTask(taskObj.taskId); // Use taskId for deletion
+
+                    li.appendChild(deleteBtn);
+                    taskList.appendChild(li);
+                });
+            })
+            .catch(error => console.log('Error:', error));
+        }
+
+        var deleteTask = (taskId) => {
+            fetch("https://t8g4xot9rd.execute-api.us-east-1.amazonaws.com/prod/", {
+                method: 'DELETE',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "taskId": taskId })  // Use taskId instead of task
+            })
+            .then(() => fetchTasks()) // Refresh list after deletion
+            .catch(error => console.log('Error:', error));
+        }
+
+        window.onload = fetchTasks;
+    </script>
+</head>
+<body>
+    <h1>Monika's To-Do List</h1>
+    <form>
+        <label>Enter Task:</label>
+        <input type="text" id="task" placeholder="Type your task here...">
+        <button type="button" onclick="addTask()">ADD TASK</button>
+        </form>
+    <h2>My Tasks</h2>
+    <ul id="taskList"></ul>
+</body>
+</html>
